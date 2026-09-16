@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campo Cheio — Agenda para quadras e societys</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0F241A;
+    --bg-2: #16301F;
+    --line: #2C4A36;
+    --turf: #4E9A5A;
+    --chalk: #F4F2E9;
+    --muted: #9BB0A2;
+    --flood: #E8A33D;
+    --flood-dim: #6B5326;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--chalk);
+    font-family:'Work Sans', sans-serif;
+    line-height:1.6;
+  }
+  h1,h2,h3,.stadium{
+    font-family:'Oswald', sans-serif;
+    font-weight:600;
+    letter-spacing:0.01em;
+    margin:0;
+  }
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .halfway{
+    display:flex; align-items:center; gap:16px;
+    margin:64px 0;
+  }
+  .halfway .rule{ flex:1; height:1px; background:var(--line); }
+  .halfway .dot{
+    width:8px; height:8px; border-radius:50%;
+    border:1px solid var(--line);
+  }
+
+  /* NAV */
+  nav{ padding:28px 0; }
+  nav .wrap{ display:flex; align-items:center; justify-content:space-between; }
+  .brand{ font-family:'Oswald', sans-serif; font-size:20px; font-weight:600; color:var(--chalk); }
+  .brand span{ color:var(--flood); }
+  nav a{
+    color:var(--chalk); text-decoration:none; font-size:14px;
+    border:1px solid var(--line); padding:9px 18px; border-radius:4px;
+  }
+  nav a:hover{ border-color:var(--turf); }
+
+  /* HERO */
+  .hero{ padding:40px 0 0; }
+  .hero-grid{ display:grid; grid-template-columns:1.1fr 0.9fr; gap:56px; align-items:center; }
+  .hero h1{ font-size:46px; line-height:1.12; color:var(--chalk); }
+  .hero p.lead{
+    font-size:17px; color:var(--muted); max-width:440px; margin:22px 0 30px;
+  }
+  .cta-row{ display:flex; gap:12px; align-items:center; }
+  .btn{
+    font-family:'Work Sans', sans-serif; font-weight:600; font-size:15px;
+    padding:13px 24px; border-radius:4px; border:none; cursor:pointer;
+  }
+  .btn-flood{ background:var(--flood); color:#241804; }
+  .btn-flood:hover{ background:#f0ae4f; }
+  .btn-ghost{ background:transparent; color:var(--chalk); border:1px solid var(--line); }
+  .btn-ghost:hover{ border-color:var(--turf); }
+  .fine{ font-size:13px; color:var(--muted); margin-top:14px; }
+
+  /* SCOREBOARD PANEL */
+  .board{
+    background:var(--bg-2); border:1px solid var(--line); border-radius:8px;
+    padding:22px;
+  }
+  .board-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding-bottom:14px; border-bottom:1px solid var(--line); margin-bottom:14px;
+  }
+  .board-head .name{ font-size:14px; color:var(--muted); }
+  .board-head .live{ font-size:12px; color:var(--turf); }
+  .board-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;
+  }
+  .board-row:last-child{ border-bottom:none; }
+  .board-row .time{ color:var(--muted); width:64px; font-family:'Oswald',sans-serif; }
+  .tag{
+    font-size:11px; padding:3px 9px; border-radius:3px;
+  }
+  .tag-paid{ background:rgba(78,154,90,0.18); color:#8fd39c; }
+  .tag-pending{ background:rgba(232,163,61,0.18); color:var(--flood); }
+  .tag-open{ background:transparent; color:var(--muted); border:1px solid var(--line); }
+
+  /* PAIN SECTION */
+  .pains{ display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
+  .pain .num{ font-family:'Oswald',sans-serif; font-size:13px; color:var(--flood); margin-bottom:10px; }
+  .pain h3{ font-size:18px; color:var(--chalk); margin-bottom:8px; }
+  .pain p{ font-size:14px; color:var(--muted); margin:0; }
+
+  /* FEATURES */
+  .feature{
+    display:grid; grid-template-columns:0.9fr 1.1fr; gap:48px; align-items:center;
+    padding:44px 0;
+    border-top:1px solid var(--line);
+  }
+  .feature:last-child{ border-bottom:1px solid var(--line); }
+  .feature .eyebrow{ color:var(--turf); font-size:13px; margin-bottom:10px; }
+  .feature h3{ font-size:26px; color:var(--chalk); margin-bottom:12px; }
+  .feature p{ color:var(--muted); font-size:15px; max-width:400px; }
+  .feature.reverse{ grid-template-columns:1.1fr 0.9fr; }
+  .feature.reverse .visual{ order:-1; }
+  .mini-board{
+    background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:18px;
+    font-size:13px;
+  }
+  .mini-board .row{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
+  .mini-board .row:last-child{ border-bottom:none; }
+  .stat-big{ font-family:'Oswald',sans-serif; font-size:34px; color:var(--chalk); }
+  .stat-label{ font-size:13px; color:var(--muted); }
+
+  /* CLOSING CTA */
+  .closing{
+    background:var(--bg-2); border:1px solid var(--line); border-radius:8px;
+    padding:48px; text-align:center; margin:80px 0 40px;
+  }
+  .closing h2{ font-size:30px; color:var(--chalk); margin-bottom:14px; }
+  .closing p{ color:var(--muted); font-size:15px; margin:0 auto 26px; max-width:420px; }
+  .form-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .form-row input{
+    background:var(--bg); border:1px solid var(--line); color:var(--chalk);
+    padding:12px 14px; border-radius:4px; font-size:14px; width:240px;
+    font-family:'Work Sans', sans-serif;
+  }
+  .form-row input:focus{ outline:none; border-color:var(--turf); }
+  #confirm{ display:none; color:#8fd39c; font-size:14px; margin-top:16px; }
+  .err{ display:none; color:#e08585; font-size:13px; margin-top:10px; }
+
+  footer{ padding:30px 0 50px; color:var(--muted); font-size:13px; display:flex; justify-content:space-between; }
+
+  @media (max-width: 760px){
+    .hero-grid, .feature, .feature.reverse, .pains{ grid-template-columns:1fr; }
+    .feature .visual{ order:0; }
+    .hero h1{ font-size:32px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand">On<span>fut</span></div>
+    <a href="#demo">Pedir demonstração</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Sua quadra para de depender de quem atende o telefone.</h1>
+      <p class="lead">Agenda, reserva online para o cliente e controle de mensalista atrasado — tudo num lugar só, pensado para quem toca um centro esportivo, não uma startup.</p>
+      <div class="cta-row">
+        <button class="btn btn-flood" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Pedir demonstração</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('como-funciona').scrollIntoView({behavior:'smooth'})">Ver como funciona</button>
+      </div>
+      <p class="fine">Sem cartão de crédito. Resposta em até 1 dia útil.</p>
+    </div>
+    <div class="board">
+      <div class="board-head">
+        <span class="name">Quadra 1 — sexta-feira</span>
+        <span class="live">● hoje</span>
+      </div>
+      <div class="board-row"><span class="time">18:00</span><span>Turma da quinta</span><span class="tag tag-paid">Pago</span></div>
+      <div class="board-row"><span class="time">19:00</span><span>Time do Zé</span><span class="tag tag-pending">Pendente</span></div>
+      <div class="board-row"><span class="time">20:00</span><span>—</span><span class="tag tag-open">Livre</span></div>
+      <div class="board-row"><span class="time">21:00</span><span>Resenha FC</span><span class="tag tag-paid">Pago</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="halfway"><div class="rule"></div><div class="dot"></div><div class="rule"></div></div>
+</div>
+
+<section class="wrap" id="como-funciona">
+  <div class="pains">
+    <div class="pain">
+      <div class="num">O caderno some</div>
+      <h3>Horário duplicado</h3>
+      <p>Dois times marcados no mesmo horário porque alguém anotou errado ou esqueceu de apagar.</p>
+    </div>
+    <div class="pain">
+      <div class="num">O WhatsApp lota</div>
+      <h3>Você vira central de atendimento</h3>
+      <p>Toda reserva passa pelo seu celular — de dia, de noite, no fim de semana.</p>
+    </div>
+    <div class="pain">
+      <div class="num">O mensalista atrasa</div>
+      <h3>Ninguém sabe quem deve</h3>
+      <p>Sem um lugar único pra ver status de pagamento, o atraso só aparece quando já é tarde.</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="halfway"><div class="rule"></div><div class="dot"></div><div class="rule"></div></div>
+</div>
+
+<section class="wrap">
+
+  <div class="feature">
+    <div>
+      <div class="eyebrow">Agenda do dono</div>
+      <h3>Veja a semana inteira, com preço e pagamento na mesma tela.</h3>
+      <p>Cada horário mostra quem reservou e se já pagou. Bloqueie manutenção, ajuste preço de pico, tudo sem ligar pra ninguém.</p>
+    </div>
+    <div class="visual mini-board">
+      <div class="row"><span>Ter 19:00</span><span class="tag tag-paid">Pago</span></div>
+      <div class="row"><span>Ter 20:00</span><span class="tag tag-pending">Pendente</span></div>
+      <div class="row"><span>Qua 18:00</span><span class="tag tag-open">Livre</span></div>
+      <div class="row"><span>Qui 21:00</span><span class="tag tag-paid">Pago</span></div>
+    </div>
+  </div>
+
+  <div class="feature reverse">
+    <div>
+      <div class="eyebrow">Reserva do cliente</div>
+      <h3>O time reserva sozinho, você só confirma que chegou.</h3>
+      <p>Um link público mostra os horários livres da semana. O cliente escolhe, preenche o nome e telefone, e a reserva já entra na sua agenda.</p>
+    </div>
+    <div class="visual mini-board">
+      <div class="stat-big">24h</div>
+      <div class="stat-label">por dia o link fica disponível pro cliente reservar</div>
+    </div>
+  </div>
+
+  <div class="feature">
+    <div>
+      <div class="eyebrow">Pagamentos</div>
+      <h3>Saiba quem deve antes que vire prejuízo.</h3>
+      <p>Um painel só com quem está pago, pendente ou atrasado — e quanto isso representa na semana.</p>
+    </div>
+    <div class="visual mini-board">
+      <div class="row"><span>Faturamento da semana</span><span class="stat-big" style="font-size:20px;">R$ 2.340</span></div>
+      <div class="row"><span>Em atraso</span><span style="color:#e08585;">R$ 280</span></div>
+    </div>
+  </div>
+
+</section>
+
+<section class="wrap" id="demo">
+  <div class="closing">
+    <h2>Quer ver funcionando na sua quadra?</h2>
+    <p>Sem compromisso. A gente mostra a agenda rodando com os horários da sua semana.</p>
+    <div class="form-row">
+      <input id="c-name" type="text" placeholder="Seu nome" />
+      <input id="c-phone" type="text" placeholder="WhatsApp com DDD" />
+      <button class="btn btn-flood" onclick="submitDemo()">Pedir demonstração</button>
+    </div>
+    <p class="err" id="c-err">Preencha nome e WhatsApp antes de enviar.</p>
+    <p id="confirm">Recebido. Alguém da equipe chama você no WhatsApp em até 1 dia útil.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex; justify-content:space-between; width:100%;">
+    <span>Onfut</span>
+    <span>Protótipo de validação — não é um produto em produção</span>
+  </div>
+</footer>
+
+<script>
+function submitDemo(){
+  const name = document.getElementById('c-name').value.trim();
+  const phone = document.getElementById('c-phone').value.trim();
+  const err = document.getElementById('c-err');
+  const confirm = document.getElementById('confirm');
+  if(!name || !phone){
+    err.style.display = 'block';
+    confirm.style.display = 'none';
+    return;
+  }
+  err.style.display = 'none';
+  confirm.style.display = 'block';
+}
+</script>
+
+</body>
+</html>
+
+# Onfut — site (index)
+
+Só o site por enquanto. Sem Firebase, sem agenda — é HTML puro, não depende de nada além de hospedagem.
+
+## 1. GitHub
+1. Crie um repositório novo (privado ou público, tanto faz por enquanto).
+2. Suba só o arquivo `index.html` pra raiz do repositório.
+
+## 2. Vercel
+1. Em https://vercel.com, clique em **Add New > Project**.
+2. Importe esse repositório.
+3. Não mexe em nenhuma configuração de build — é estático, o Vercel detecta sozinho.
+4. **Deploy**. Você recebe uma URL tipo `onfut.vercel.app` em menos de 1 minuto.
+
+## Depois
+Quando quiser, o botão "Ver agenda" do site já aponta pra `agenda.html` — quando você subir esse arquivo (e o `firebase-config.js`) no mesmo repositório, o link passa a funcionar sozinho, sem precisar mexer no site de novo.
