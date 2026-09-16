@@ -166,6 +166,30 @@
   .modal-note{ font-size:12px; color:var(--muted); margin:0 0 14px; padding:12px; background:rgba(0,0,0,0.18); border-radius:12px; line-height:1.5; }
   .quick-slot{ width:100%; text-align:left; margin-bottom:8px; padding:11px 14px; }
   .quick-slot:hover{ border-color:var(--turf); }
+
+  /* mobile hardening */
+  @media (max-width:600px){
+    nav .inner{ padding:0 16px; gap:10px; }
+    nav > div > div{ gap:10px !important; }
+    #sync-state{ display:none; }
+    .wrap{ padding:0 16px; }
+    .topbar{ padding:20px 0 14px; }
+    .summary{ gap:8px; margin-bottom:18px; }
+    .summary .cell{ padding:12px 8px; border-radius:13px; }
+    .summary .val{ font-size:16px; }
+    .summary .lbl{ font-size:8.5px; letter-spacing:0.02em; }
+    .panel{ padding:16px; border-radius:16px; }
+    .day-panel-head{ flex-direction:column; align-items:stretch; gap:12px; }
+    .btn-agendar{ justify-content:center; }
+    .date-big{ font-size:21px; }
+    .cal-cell{ font-size:12px; }
+    .modal-card{ width:calc(100vw - 48px); max-width:320px; }
+  }
+  @media (max-width:380px){
+    .backlink-text{ display:none; }
+    .summary{ grid-template-columns:1fr 1fr 1fr; }
+    .summary .lbl{ font-size:8px; }
+  }
 </style>
 </head>
 <body>
@@ -175,7 +199,7 @@
   <div style="display:flex; align-items:center; gap:18px;">
     <span id="sync-state" class="hidden"><i class="ti ti-loader-2"></i> conectando…</span>
     <button id="logout-btn" class="hidden">Sair</button>
-    <a class="backlink" href="index.html"><i class="ti ti-arrow-left"></i>voltar para o site</a>
+    <a class="backlink" href="index.html"><i class="ti ti-arrow-left"></i><span class="backlink-text">voltar para o site</span></a>
   </div>
 </div></nav>
 
