@@ -12,6 +12,7 @@
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
 
 <style>
@@ -33,6 +34,21 @@
   #sync-state{ font-size:11px; color:var(--muted); display:flex; align-items:center; gap:5px; }
   #sync-state.ok{ color:var(--turf); }
   #sync-state.err{ color:var(--danger); }
+  #logout-btn{ font-size:12px; color:var(--muted); background:none; border:1px solid var(--line); border-radius:6px; padding:6px 12px; cursor:pointer; }
+  #logout-btn:hover{ border-color:var(--danger); color:var(--danger); }
+
+  /* login screen */
+  .auth-wrap{ max-width:340px; margin:80px auto; padding:0 24px; }
+  .auth-card{ background:var(--bg-2); border:1px solid var(--line); border-radius:12px; padding:28px; }
+  .auth-card h2{ font-size:22px; margin-bottom:6px; }
+  .auth-card p.sub{ font-size:13px; color:var(--muted); margin:0 0 20px; }
+  .auth-card input{ width:100%; margin-bottom:10px; background:var(--bg); border:1px solid var(--line); color:var(--chalk); padding:11px 12px; border-radius:6px; font-size:14px; font-family:'Work Sans', sans-serif; }
+  .auth-card input:focus{ outline:none; border-color:var(--turf); }
+  .auth-card button.primary{ width:100%; background:var(--flood); color:#241804; border:none; font-weight:600; font-size:14px; padding:12px; border-radius:6px; cursor:pointer; margin-top:4px; }
+  .auth-toggle{ text-align:center; font-size:13px; color:var(--muted); margin-top:16px; }
+  .auth-toggle a{ color:var(--turf); cursor:pointer; text-decoration:underline; }
+  .auth-error{ display:none; font-size:13px; color:var(--danger); background:rgba(224,133,133,0.1); border-radius:6px; padding:10px 12px; margin-bottom:12px; }
+  .hidden{ display:none !important; }
 
   .header{ position:relative; padding:36px 0 22px; text-align:center; overflow:hidden; }
   .header::before{
@@ -99,7 +115,6 @@
   .modal-label{ font-size:12px; color:var(--muted); margin-bottom:14px; }
   .modal-error{ display:none; font-size:12px; color:var(--danger); margin-bottom:8px; }
   .modal-note{ font-size:12px; color:var(--muted); margin:0 0 12px; padding:10px; background:var(--bg); border-radius:6px; }
-  .hidden{ display:none !important; }
 </style>
 </head>
 <body>
@@ -107,31 +122,51 @@
 <nav><div class="inner">
   <div class="brand">On<span>fut</span></div>
   <div style="display:flex; align-items:center; gap:18px;">
-    <span id="sync-state"><i class="ti ti-loader-2"></i> conectando…</span>
+    <span id="sync-state" class="hidden"><i class="ti ti-loader-2"></i> conectando…</span>
+    <button id="logout-btn" class="hidden">Sair</button>
     <a class="backlink" href="index.html"><i class="ti ti-arrow-left"></i>voltar para o site</a>
   </div>
 </div></nav>
 
-<div class="header"><div class="wrap header-inner">
-  <div class="tabs" id="quadra-tabs"></div>
-  <div class="date-big" id="date-big"></div>
-  <div class="date-sub" id="date-sub"></div>
-  <div class="strip" id="day-strip"></div>
-</div></div>
-
-<div class="wrap">
-  <div class="summary" id="summary"></div>
-
-  <div class="legend">
-    <span><span class="swatch" style="background:#8fd39c;"></span>Pago</span>
-    <span><span class="swatch" style="background:var(--flood);"></span>Pendente</span>
-    <span><span class="swatch" style="background:var(--danger);"></span>Atrasado</span>
-    <span><span class="swatch" style="background:var(--line);"></span>Livre</span>
-    <span><i class="ti ti-repeat" style="font-size:12px;"></i> Mensalista</span>
+<!-- TELA DE LOGIN -->
+<div class="auth-wrap" id="auth-screen">
+  <div class="auth-card">
+    <h2 id="auth-title">Entrar</h2>
+    <p class="sub" id="auth-sub">Acesse a agenda da sua quadra.</p>
+    <p class="auth-error" id="auth-error"></p>
+    <input id="auth-email" type="email" placeholder="E-mail" />
+    <input id="auth-pass" type="password" placeholder="Senha (mínimo 6 caracteres)" />
+    <button class="primary" id="auth-submit" onclick="submitAuth()">Entrar</button>
+    <p class="auth-toggle">
+      <span id="auth-toggle-text">Ainda não tem conta?</span>
+      <a onclick="toggleAuthMode()" id="auth-toggle-link">Criar conta</a>
+    </p>
   </div>
+</div>
 
-  <div class="list" id="list"></div>
-  <div id="modal-layer"></div>
+<!-- APP (só aparece logado) -->
+<div id="app-screen" class="hidden">
+  <div class="header"><div class="wrap header-inner">
+    <div class="tabs" id="quadra-tabs"></div>
+    <div class="date-big" id="date-big"></div>
+    <div class="date-sub" id="date-sub"></div>
+    <div class="strip" id="day-strip"></div>
+  </div></div>
+
+  <div class="wrap">
+    <div class="summary" id="summary"></div>
+
+    <div class="legend">
+      <span><span class="swatch" style="background:#8fd39c;"></span>Pago</span>
+      <span><span class="swatch" style="background:var(--flood);"></span>Pendente</span>
+      <span><span class="swatch" style="background:var(--danger);"></span>Atrasado</span>
+      <span><span class="swatch" style="background:var(--line);"></span>Livre</span>
+      <span><i class="ti ti-repeat" style="font-size:12px;"></i> Mensalista</span>
+    </div>
+
+    <div class="list" id="list"></div>
+    <div id="modal-layer"></div>
+  </div>
 </div>
 
 <script>
@@ -149,12 +184,78 @@ const quadras = ['Quadra 1','Quadra 2'];
 let currentQuadra = 0;
 let currentDate = new Date(); currentDate.setHours(0,0,0,0);
 
-let mensalistas = [];       // todos os registros, ao vivo via onSnapshot
-let reservasDoDia = {};     // overrides do dia atual: { hour: {id, ...dados} }
-let mensalistaUnsub = null;
+let mensalistas = [];
+let reservasDoDia = {};
 let reservasUnsub = null;
+let currentUser = null;
 
-/* ---------- conexão com o Firestore ---------- */
+/* ---------- autenticação ---------- */
+const auth = firebase.auth();
+let authMode = 'login'; // 'login' | 'signup'
+
+function toggleAuthMode(){
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  document.getElementById('auth-title').textContent = authMode === 'login' ? 'Entrar' : 'Criar conta';
+  document.getElementById('auth-submit').textContent = authMode === 'login' ? 'Entrar' : 'Criar conta';
+  document.getElementById('auth-toggle-text').textContent = authMode === 'login' ? 'Ainda não tem conta?' : 'Já tem conta?';
+  document.getElementById('auth-toggle-link').textContent = authMode === 'login' ? 'Criar conta' : 'Entrar';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+async function submitAuth(){
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+  if (!email || !pass){ errEl.textContent = 'Preencha e-mail e senha.'; errEl.style.display='block'; return; }
+
+  try{
+    if (authMode === 'login'){
+      await auth.signInWithEmailAndPassword(email, pass);
+    } else {
+      await auth.createUserWithEmailAndPassword(email, pass);
+    }
+  } catch(e){
+    errEl.textContent = traduzErro(e.code);
+    errEl.style.display = 'block';
+  }
+}
+
+function traduzErro(code){
+  const map = {
+    'auth/invalid-email': 'E-mail inválido.',
+    'auth/user-not-found': 'Não existe conta com esse e-mail.',
+    'auth/wrong-password': 'Senha incorreta.',
+    'auth/invalid-credential': 'E-mail ou senha incorretos.',
+    'auth/email-already-in-use': 'Já existe conta com esse e-mail — tenta entrar em vez de criar.',
+    'auth/weak-password': 'Senha muito curta (mínimo 6 caracteres).'
+  };
+  return map[code] || 'Não foi possível completar. Tente novamente.';
+}
+
+document.getElementById('logout-btn').onclick = ()=> auth.signOut();
+
+auth.onAuthStateChanged(user=>{
+  currentUser = user;
+  if (user){
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    document.getElementById('sync-state').classList.remove('hidden');
+    document.getElementById('logout-btn').classList.remove('hidden');
+    listenMensalistas();
+    listenReservasDoDia();
+    renderAll();
+  } else {
+    document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('app-screen').classList.add('hidden');
+    document.getElementById('sync-state').classList.add('hidden');
+    document.getElementById('logout-btn').classList.add('hidden');
+    if (reservasUnsub) reservasUnsub();
+    mensalistas = []; reservasDoDia = {};
+  }
+});
+
+/* ---------- conexão com o Firestore (dados só do dono logado, via ownerId) ---------- */
 function setSyncState(state){
   const el = document.getElementById('sync-state');
   el.classList.remove('ok','err');
@@ -164,7 +265,7 @@ function setSyncState(state){
 }
 
 function listenMensalistas(){
-  db.collection('mensalistas').onSnapshot(snap=>{
+  db.collection('mensalistas').where('ownerId','==', currentUser.uid).onSnapshot(snap=>{
     mensalistas = snap.docs.map(d => ({ id:d.id, ...d.data() }));
     setSyncState('ok');
     renderAll();
@@ -175,6 +276,7 @@ function listenReservasDoDia(){
   if (reservasUnsub) reservasUnsub();
   reservasDoDia = {};
   reservasUnsub = db.collection('reservas')
+    .where('ownerId','==', currentUser.uid)
     .where('quadraIdx','==',currentQuadra)
     .where('dateISO','==',dateISO(currentDate))
     .onSnapshot(snap=>{
@@ -185,9 +287,6 @@ function listenReservasDoDia(){
 }
 
 /* ---------- lógica de horário (bloqueio de conflito) ---------- */
-// Um horário só pode estar em UM estado por vez: override manual (reserva avulsa
-// ou bloqueio) tem prioridade; se não houver override, checa se existe mensalista
-// fixo pra esse dia da semana + horário + quadra; senão está livre.
 function getSlot(date, quadraIdx, hour){
   if (quadraIdx === currentQuadra && dateISO(date) === dateISO(currentDate)){
     const ov = reservasDoDia[hour];
@@ -205,7 +304,6 @@ function getSlot(date, quadraIdx, hour){
 function dayHasLate(date, quadraIdx){
   return hours.some(h => getSlot(date, quadraIdx, h).pay === 'atrasado');
 }
-
 function isSameDay(a,b){ return a.toDateString() === b.toDateString(); }
 
 /* ---------- render ---------- */
@@ -246,7 +344,7 @@ function renderSummary(){
     const e = getSlot(currentDate, currentQuadra, h);
     if (e.status === 'ocupado'){
       ocupados++;
-      if (e.pay === 'atrasado') atraso += price(h); else if (e.pay === 'pago' || e.pay === 'pendente') faturamento += (e.pay==='pago'?price(h):0);
+      if (e.pay === 'atrasado') atraso += price(h); else if (e.pay === 'pago') faturamento += price(h);
     }
   });
   document.getElementById('summary').innerHTML = `
@@ -265,7 +363,7 @@ function renderList(){
 
     if (entry.status === 'ocupado'){
       name = entry.name; sub = entry.phone || '';
-      if (entry.tipo === 'mensalista') icon = 'ti-repeat'; 
+      if (entry.tipo === 'mensalista') icon = 'ti-repeat';
       if (entry.pay === 'pago'){ iconClass='icon-paid'; tagClass='tag-paid'; tagLabel='Pago'; if(entry.tipo!=='mensalista') icon='ti-check'; }
       else if (entry.pay === 'pendente'){ iconClass='icon-pending'; tagClass='tag-pending'; tagLabel='Pendente'; if(entry.tipo!=='mensalista') icon='ti-clock'; }
       else { iconClass='icon-late'; tagClass='tag-late'; tagLabel='Atrasado'; if(entry.tipo!=='mensalista') icon='ti-alert-triangle'; }
@@ -365,12 +463,14 @@ async function saveEntry(h){
     if (tipo === 'mensalista'){
       const venc = parseInt(document.getElementById('m-venc').value, 10) || 10;
       await db.collection('mensalistas').add({
+        ownerId: currentUser.uid,
         quadraIdx: currentQuadra, dow: currentDate.getDay(), hour: h,
         name, phone, diaVencimento: venc, paidMonths: []
       });
     } else {
       const pay = tipo === 'bloqueado' ? null : document.getElementById('m-pay').value;
       await db.collection('reservas').add({
+        ownerId: currentUser.uid,
         quadraIdx: currentQuadra, dateISO: dateISO(currentDate), hour: h,
         status: tipo === 'bloqueado' ? 'bloqueado' : 'ocupado',
         tipo: tipo === 'bloqueado' ? null : 'avulso',
@@ -387,9 +487,9 @@ async function freeSlot(docId){
 }
 
 async function cancelOneDay(h){
-  // cria um override "livre" só pra essa data, sem apagar a regra do mensalista
   try{
     await db.collection('reservas').add({
+      ownerId: currentUser.uid,
       quadraIdx: currentQuadra, dateISO: dateISO(currentDate), hour: h, status:'livre'
     });
     closeModal();
@@ -410,11 +510,6 @@ async function markPaid(ruleId){
     closeModal();
   } catch(e){ console.error(e); alert('Não foi possível marcar como pago.'); }
 }
-
-/* ---------- start ---------- */
-listenMensalistas();
-listenReservasDoDia();
-renderAll();
 </script>
 </body>
 </html>
