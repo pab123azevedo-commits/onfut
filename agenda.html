@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda — Onfut</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<style>
+  :root{
+    --bg:#0F241A; --bg-2:#16301F; --bg-3:#1C3A26; --line:#2A4735;
+    --turf:#4E9A5A; --chalk:#F4F2E9; --muted:#93A99C; --flood:#E8A33D; --danger:#E08585;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--chalk); font-family:'Work Sans', sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3{ font-family:'Oswald', sans-serif; font-weight:600; margin:0; }
+  .wrap{ max-width:600px; margin:0 auto; padding:0 24px 70px; }
+
+  nav{ padding:22px 0; border-bottom:1px solid var(--line); }
+  nav .inner{ max-width:1080px; margin:0 auto; padding:0 24px; display:flex; justify-content:space-between; align-items:center; }
+  .brand{ font-family:'Oswald', sans-serif; font-size:19px; font-weight:600; }
+  .brand span{ color:var(--flood); }
+  .backlink{ color:var(--muted); font-size:13px; text-decoration:none; display:flex; align-items:center; gap:5px; }
+  .backlink:hover{ color:var(--chalk); }
+  #sync-state{ font-size:11px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+  #sync-state.ok{ color:var(--turf); }
+  #sync-state.err{ color:var(--danger); }
+
+  .header{ position:relative; padding:36px 0 22px; text-align:center; overflow:hidden; }
+  .header::before{
+    content:''; position:absolute; top:-140px; left:50%; transform:translateX(-50%);
+    width:520px; height:320px;
+    background:radial-gradient(ellipse at center, rgba(232,163,61,0.16) 0%, rgba(232,163,61,0) 70%);
+    pointer-events:none;
+  }
+  .header-inner{ position:relative; }
+  .tabs{ display:flex; gap:8px; justify-content:center; margin-bottom:22px; }
+  .tab{ font-size:13px; font-weight:500; padding:7px 16px; border-radius:20px; border:1px solid var(--line); background:transparent; color:var(--muted); cursor:pointer; }
+  .tab.active{ background:var(--bg-3); color:var(--chalk); border-color:var(--turf); }
+
+  .date-big{ font-family:'Oswald', sans-serif; font-size:44px; line-height:1; }
+  .date-sub{ font-size:13px; color:var(--muted); margin-top:6px; }
+  .date-sub .dot{ color:var(--turf); }
+
+  .strip{ display:flex; justify-content:center; gap:6px; margin-top:22px; }
+  .chip{ width:42px; padding:8px 0; border-radius:8px; border:1px solid var(--line); background:transparent; cursor:pointer; text-align:center; color:var(--muted); }
+  .chip .dow{ font-size:10px; text-transform:uppercase; letter-spacing:0.04em; }
+  .chip .num{ font-family:'Oswald', sans-serif; font-size:15px; color:var(--chalk); margin-top:2px; }
+  .chip.active{ border-color:var(--flood); background:rgba(232,163,61,0.1); }
+  .chip.active .dow{ color:var(--flood); }
+  .chip.has-late::after{ content:''; display:block; width:4px; height:4px; border-radius:50%; background:var(--danger); margin:4px auto 0; }
+
+  .summary{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin:26px 0 22px; }
+  .summary .cell{ background:var(--bg-2); padding:14px 10px; text-align:center; }
+  .summary .val{ font-family:'Oswald', sans-serif; font-size:19px; }
+  .summary .val.danger{ color:var(--danger); }
+  .summary .lbl{ font-size:11px; color:var(--muted); margin-top:3px; }
+
+  .legend{ display:flex; gap:14px; font-size:12px; color:var(--muted); margin-bottom:14px; flex-wrap:wrap; }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+
+  .list{ border:1px solid var(--line); border-radius:10px; overflow:hidden; min-height:60px; }
+  .item{ display:flex; align-items:center; gap:14px; padding:15px 16px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .item:last-child{ border-bottom:none; }
+  .item:hover{ background:rgba(255,255,255,0.025); }
+  .item .time{ font-family:'Oswald', sans-serif; font-size:15px; width:50px; }
+  .item .icon{ width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .icon-paid{ background:rgba(78,154,90,0.18); color:#8fd39c; }
+  .icon-pending{ background:rgba(232,163,61,0.18); color:var(--flood); }
+  .icon-late{ background:rgba(224,133,133,0.18); color:var(--danger); }
+  .icon-blocked{ background:var(--bg-3); color:var(--muted); }
+  .icon-livre{ background:transparent; color:var(--line); border:1px solid var(--line); }
+  .item .main{ flex:1; min-width:0; }
+  .item .main .name{ font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item .main .sub{ font-size:12px; color:var(--muted); }
+  .tag{ font-size:11px; padding:4px 10px; border-radius:20px; white-space:nowrap; font-weight:500; }
+  .tag-paid{ background:rgba(78,154,90,0.18); color:#8fd39c; }
+  .tag-pending{ background:rgba(232,163,61,0.18); color:var(--flood); }
+  .tag-late{ background:rgba(224,133,133,0.18); color:var(--danger); }
+  .tag-blocked{ background:var(--bg-3); color:var(--muted); }
+  .tag-livre{ background:transparent; color:var(--muted); border:1px solid var(--line); }
+
+  #modal-layer{ position:relative; }
+  .modal-bg{ min-height:300px; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; margin-top:16px; border-radius:10px; }
+  .modal-card{ background:var(--bg-2); border:1px solid var(--line); border-radius:10px; padding:22px; width:280px; }
+  .modal-card input, .modal-card select{ width:100%; margin-bottom:9px; background:var(--bg); border:1px solid var(--line); color:var(--chalk); padding:10px 12px; border-radius:6px; font-size:14px; font-family:'Work Sans', sans-serif; }
+  .modal-card input:focus, .modal-card select:focus{ outline:none; border-color:var(--turf); }
+  .modal-card button{ font-weight:600; font-size:13px; padding:10px 16px; border-radius:6px; border:1px solid var(--line); background:transparent; color:var(--chalk); cursor:pointer; }
+  .modal-card button.primary{ background:var(--flood); color:#241804; border:none; }
+  .modal-label{ font-size:12px; color:var(--muted); margin-bottom:14px; }
+  .modal-error{ display:none; font-size:12px; color:var(--danger); margin-bottom:8px; }
+  .modal-note{ font-size:12px; color:var(--muted); margin:0 0 12px; padding:10px; background:var(--bg); border-radius:6px; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<nav><div class="inner">
+  <div class="brand">On<span>fut</span></div>
+  <div style="display:flex; align-items:center; gap:18px;">
+    <span id="sync-state"><i class="ti ti-loader-2"></i> conectando…</span>
+    <a class="backlink" href="index.html"><i class="ti ti-arrow-left"></i>voltar para o site</a>
+  </div>
+</div></nav>
+
+<div class="header"><div class="wrap header-inner">
+  <div class="tabs" id="quadra-tabs"></div>
+  <div class="date-big" id="date-big"></div>
+  <div class="date-sub" id="date-sub"></div>
+  <div class="strip" id="day-strip"></div>
+</div></div>
+
+<div class="wrap">
+  <div class="summary" id="summary"></div>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:#8fd39c;"></span>Pago</span>
+    <span><span class="swatch" style="background:var(--flood);"></span>Pendente</span>
+    <span><span class="swatch" style="background:var(--danger);"></span>Atrasado</span>
+    <span><span class="swatch" style="background:var(--line);"></span>Livre</span>
+    <span><i class="ti ti-repeat" style="font-size:12px;"></i> Mensalista</span>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div id="modal-layer"></div>
+</div>
+
+<script>
+/* ---------- setup ---------- */
+const dows = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const dowsShort = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const months = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const hours = []; for (let h=15; h<=23; h++) hours.push(h);
+function fmt(h){ return h+':00'; }
+function price(h){ return h>=18 ? 140 : 90; }
+function dateISO(d){ return d.toISOString().slice(0,10); }
+function monthKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+
+const quadras = ['Quadra 1','Quadra 2'];
+let currentQuadra = 0;
+let currentDate = new Date(); currentDate.setHours(0,0,0,0);
+
+let mensalistas = [];       // todos os registros, ao vivo via onSnapshot
+let reservasDoDia = {};     // overrides do dia atual: { hour: {id, ...dados} }
+let mensalistaUnsub = null;
+let reservasUnsub = null;
+
+/* ---------- conexão com o Firestore ---------- */
+function setSyncState(state){
+  const el = document.getElementById('sync-state');
+  el.classList.remove('ok','err');
+  if (state === 'ok'){ el.innerHTML = '<i class="ti ti-cloud-check"></i> sincronizado'; el.classList.add('ok'); }
+  else if (state === 'err'){ el.innerHTML = '<i class="ti ti-cloud-off"></i> sem conexão com o banco'; el.classList.add('err'); }
+  else { el.innerHTML = '<i class="ti ti-loader-2"></i> conectando…'; }
+}
+
+function listenMensalistas(){
+  db.collection('mensalistas').onSnapshot(snap=>{
+    mensalistas = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    setSyncState('ok');
+    renderAll();
+  }, err=>{ console.error(err); setSyncState('err'); });
+}
+
+function listenReservasDoDia(){
+  if (reservasUnsub) reservasUnsub();
+  reservasDoDia = {};
+  reservasUnsub = db.collection('reservas')
+    .where('quadraIdx','==',currentQuadra)
+    .where('dateISO','==',dateISO(currentDate))
+    .onSnapshot(snap=>{
+      reservasDoDia = {};
+      snap.forEach(doc => { reservasDoDia[doc.data().hour] = { id:doc.id, ...doc.data() }; });
+      renderAll();
+    }, err=>{ console.error(err); setSyncState('err'); });
+}
+
+/* ---------- lógica de horário (bloqueio de conflito) ---------- */
+// Um horário só pode estar em UM estado por vez: override manual (reserva avulsa
+// ou bloqueio) tem prioridade; se não houver override, checa se existe mensalista
+// fixo pra esse dia da semana + horário + quadra; senão está livre.
+function getSlot(date, quadraIdx, hour){
+  if (quadraIdx === currentQuadra && dateISO(date) === dateISO(currentDate)){
+    const ov = reservasDoDia[hour];
+    if (ov) return ov;
+  }
+  const rule = mensalistas.find(m => m.quadraIdx === quadraIdx && m.dow === date.getDay() && m.hour === hour);
+  if (rule){
+    const paidMonths = rule.paidMonths || [];
+    const pay = paidMonths.includes(monthKey(date)) ? 'pago' : (date.getDate() > (rule.diaVencimento||10) ? 'atrasado' : 'pendente');
+    return { status:'ocupado', tipo:'mensalista', name:rule.name, phone:rule.phone||'', pay, ruleId:rule.id };
+  }
+  return { status:'livre' };
+}
+
+function dayHasLate(date, quadraIdx){
+  return hours.some(h => getSlot(date, quadraIdx, h).pay === 'atrasado');
+}
+
+function isSameDay(a,b){ return a.toDateString() === b.toDateString(); }
+
+/* ---------- render ---------- */
+function renderTabs(){
+  const el = document.getElementById('quadra-tabs');
+  el.innerHTML = '';
+  quadras.forEach((q,i)=>{
+    const b = document.createElement('button');
+    b.className = 'tab' + (i===currentQuadra ? ' active' : '');
+    b.textContent = q;
+    b.onclick = ()=>{ currentQuadra = i; listenReservasDoDia(); renderAll(); };
+    el.appendChild(b);
+  });
+}
+
+function renderStrip(){
+  const el = document.getElementById('day-strip');
+  el.innerHTML = '';
+  for (let i=-2; i<=4; i++){
+    const d = new Date(currentDate); d.setDate(d.getDate()+i);
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (isSameDay(d,currentDate) ? ' active' : '') + (dayHasLate(d,currentQuadra) ? ' has-late' : '');
+    chip.innerHTML = '<div class="dow">'+dowsShort[d.getDay()]+'</div><div class="num">'+d.getDate()+'</div>';
+    chip.onclick = ()=>{ currentDate = d; listenReservasDoDia(); renderAll(); };
+    el.appendChild(chip);
+  }
+}
+
+function renderHeader(){
+  const isToday = isSameDay(currentDate, new Date());
+  document.getElementById('date-big').textContent = currentDate.getDate() + ' de ' + months[currentDate.getMonth()];
+  document.getElementById('date-sub').innerHTML = dows[currentDate.getDay()] + (isToday ? ' <span class="dot">·</span> hoje' : '');
+}
+
+function renderSummary(){
+  let ocupados=0, faturamento=0, atraso=0;
+  hours.forEach(h=>{
+    const e = getSlot(currentDate, currentQuadra, h);
+    if (e.status === 'ocupado'){
+      ocupados++;
+      if (e.pay === 'atrasado') atraso += price(h); else if (e.pay === 'pago' || e.pay === 'pendente') faturamento += (e.pay==='pago'?price(h):0);
+    }
+  });
+  document.getElementById('summary').innerHTML = `
+    <div class="cell"><div class="val">${ocupados}/${hours.length}</div><div class="lbl">horários ocupados</div></div>
+    <div class="cell"><div class="val">R$${faturamento}</div><div class="lbl">recebido no dia</div></div>
+    <div class="cell"><div class="val ${atraso>0?'danger':''}">R$${atraso}</div><div class="lbl">em atraso</div></div>`;
+}
+
+function renderList(){
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  hours.forEach(h=>{
+    const entry = getSlot(currentDate, currentQuadra, h);
+    let iconClass='icon-livre', tagClass='tag-livre', tagLabel='Livre', icon='ti-plus';
+    let name='Horário livre', sub='R$'+price(h);
+
+    if (entry.status === 'ocupado'){
+      name = entry.name; sub = entry.phone || '';
+      if (entry.tipo === 'mensalista') icon = 'ti-repeat'; 
+      if (entry.pay === 'pago'){ iconClass='icon-paid'; tagClass='tag-paid'; tagLabel='Pago'; if(entry.tipo!=='mensalista') icon='ti-check'; }
+      else if (entry.pay === 'pendente'){ iconClass='icon-pending'; tagClass='tag-pending'; tagLabel='Pendente'; if(entry.tipo!=='mensalista') icon='ti-clock'; }
+      else { iconClass='icon-late'; tagClass='tag-late'; tagLabel='Atrasado'; if(entry.tipo!=='mensalista') icon='ti-alert-triangle'; }
+      if (entry.tipo === 'mensalista') sub = (sub ? sub + ' · ' : '') + 'mensalista';
+    } else if (entry.status === 'bloqueado'){
+      name='Bloqueado'; sub='Manutenção'; iconClass='icon-blocked'; tagClass='tag-blocked'; tagLabel='Bloqueado'; icon='ti-lock';
+    }
+
+    const row = document.createElement('div');
+    row.className = 'item';
+    row.innerHTML = `
+      <div class="time">${fmt(h)}</div>
+      <div class="icon ${iconClass}"><i class="ti ${icon}"></i></div>
+      <div class="main"><div class="name">${name}</div><div class="sub">${sub}</div></div>
+      <span class="tag ${tagClass}">${tagLabel}</span>`;
+    row.onclick = ()=> openModal(h, entry);
+    list.appendChild(row);
+  });
+}
+
+function renderAll(){ renderTabs(); renderStrip(); renderHeader(); renderSummary(); renderList(); }
+
+/* ---------- modal ---------- */
+function openModal(h, entry){
+  const layer = document.getElementById('modal-layer');
+  const label = dows[currentDate.getDay()] + ' ' + currentDate.getDate() + ' ' + months[currentDate.getMonth()] + ' · ' + fmt(h) + ' · ' + quadras[currentQuadra];
+  let body;
+
+  if (entry.status === 'livre'){
+    body = `
+      <p class="modal-label">${label} — livre</p>
+      <select id="m-tipo" onchange="toggleMensalistaField()">
+        <option value="avulso">Avulso</option>
+        <option value="mensalista">Mensalista (fixo toda semana)</option>
+        <option value="bloqueado">Bloquear horário</option>
+      </select>
+      <input id="m-name" placeholder="Nome do time ou cliente" />
+      <input id="m-phone" placeholder="(47) 9 0000-0000" />
+      <select id="m-pay">
+        <option value="pendente">Pendente</option>
+        <option value="pago">Pago</option>
+      </select>
+      <input id="m-venc" class="hidden" type="number" min="1" max="28" placeholder="Dia do vencimento mensal (ex: 5)" />
+      <p class="modal-error" id="m-err">Informe o nome antes de salvar.</p>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button onclick="closeModal()">Cancelar</button>
+        <button class="primary" onclick="saveEntry(${h})">Salvar</button>
+      </div>`;
+  } else if (entry.status === 'ocupado' && entry.tipo === 'mensalista'){
+    body = `
+      <p class="modal-label">${label} — mensalista fixo</p>
+      <p style="font-weight:500; margin:0 0 4px;">${entry.name}</p>
+      <p style="font-size:13px; color:var(--muted); margin:0 0 16px;">${entry.phone || 'sem telefone'} · status: ${entry.pay}</p>
+      <div class="modal-note">Esse horário é reservado todo(a) ${dows[currentDate.getDay()]} automaticamente. Não dá pra criar um avulso em cima sem antes liberar só esse dia ou remover o mensalista.</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="primary" onclick="markPaid('${entry.ruleId}')">Marcar mês como pago</button>
+        <button onclick="cancelOneDay(${h})">Liberar só esse dia</button>
+        <button onclick="removeMensalista('${entry.ruleId}')">Remover mensalista</button>
+        <button onclick="closeModal()">Fechar</button>
+      </div>`;
+  } else if (entry.status === 'ocupado'){
+    body = `
+      <p class="modal-label">${label} — avulso</p>
+      <p style="font-weight:500; margin:0 0 4px;">${entry.name}</p>
+      <p style="font-size:13px; color:var(--muted); margin:0 0 16px;">${entry.phone || ''}</p>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button onclick="closeModal()">Fechar</button>
+        <button class="primary" onclick="freeSlot('${entry.id}')">Liberar horário</button>
+      </div>`;
+  } else {
+    body = `
+      <p class="modal-label">${label} — bloqueado</p>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button onclick="closeModal()">Fechar</button>
+        <button class="primary" onclick="freeSlot('${entry.id}')">Desbloquear</button>
+      </div>`;
+  }
+  layer.innerHTML = `<div class="modal-bg"><div class="modal-card">${body}</div></div>`;
+}
+
+function toggleMensalistaField(){
+  const tipo = document.getElementById('m-tipo').value;
+  document.getElementById('m-venc').classList.toggle('hidden', tipo !== 'mensalista');
+}
+
+function closeModal(){ document.getElementById('modal-layer').innerHTML = ''; }
+
+async function saveEntry(h){
+  const tipo = document.getElementById('m-tipo').value;
+  const name = document.getElementById('m-name').value.trim();
+  const err = document.getElementById('m-err');
+  if (tipo !== 'bloqueado' && !name){ err.style.display='block'; return; }
+  err.style.display = 'none';
+  const phone = document.getElementById('m-phone').value.trim();
+
+  try{
+    if (tipo === 'mensalista'){
+      const venc = parseInt(document.getElementById('m-venc').value, 10) || 10;
+      await db.collection('mensalistas').add({
+        quadraIdx: currentQuadra, dow: currentDate.getDay(), hour: h,
+        name, phone, diaVencimento: venc, paidMonths: []
+      });
+    } else {
+      const pay = tipo === 'bloqueado' ? null : document.getElementById('m-pay').value;
+      await db.collection('reservas').add({
+        quadraIdx: currentQuadra, dateISO: dateISO(currentDate), hour: h,
+        status: tipo === 'bloqueado' ? 'bloqueado' : 'ocupado',
+        tipo: tipo === 'bloqueado' ? null : 'avulso',
+        name: tipo === 'bloqueado' ? 'Bloqueado' : name, phone, pay
+      });
+    }
+    closeModal();
+  } catch(e){ console.error(e); alert('Não foi possível salvar — confira a conexão com o Firebase.'); }
+}
+
+async function freeSlot(docId){
+  try{ await db.collection('reservas').doc(docId).delete(); closeModal(); }
+  catch(e){ console.error(e); alert('Não foi possível liberar — confira a conexão com o Firebase.'); }
+}
+
+async function cancelOneDay(h){
+  // cria um override "livre" só pra essa data, sem apagar a regra do mensalista
+  try{
+    await db.collection('reservas').add({
+      quadraIdx: currentQuadra, dateISO: dateISO(currentDate), hour: h, status:'livre'
+    });
+    closeModal();
+  } catch(e){ console.error(e); alert('Não foi possível liberar esse dia.'); }
+}
+
+async function removeMensalista(ruleId){
+  if (!confirm('Remover esse mensalista definitivamente? Isso apaga o horário fixo de todas as semanas futuras.')) return;
+  try{ await db.collection('mensalistas').doc(ruleId).delete(); closeModal(); }
+  catch(e){ console.error(e); alert('Não foi possível remover.'); }
+}
+
+async function markPaid(ruleId){
+  try{
+    await db.collection('mensalistas').doc(ruleId).update({
+      paidMonths: firebase.firestore.FieldValue.arrayUnion(monthKey(currentDate))
+    });
+    closeModal();
+  } catch(e){ console.error(e); alert('Não foi possível marcar como pago.'); }
+}
+
+/* ---------- start ---------- */
+listenMensalistas();
+listenReservasDoDia();
+renderAll();
+</script>
+</body>
+</html>
