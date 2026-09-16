@@ -61,6 +61,12 @@
     border:1px solid var(--line); border-radius:22px; padding:32px 28px;
     box-shadow:var(--shadow-lg);
   }
+  .auth-mark{
+    width:44px; height:44px; border-radius:13px; margin-bottom:18px;
+    background:linear-gradient(155deg, rgba(239,174,76,0.22), rgba(239,174,76,0.06));
+    border:1px solid rgba(239,174,76,0.25);
+    display:flex; align-items:center; justify-content:center; font-size:19px; color:var(--flood);
+  }
   .auth-card h2{ font-size:24px; margin-bottom:6px; }
   .auth-card p.sub{ font-size:14px; color:var(--muted); margin:0 0 24px; line-height:1.45; }
   .auth-card input{
@@ -69,7 +75,8 @@
     transition:border-color 0.15s var(--ease), background 0.15s var(--ease);
   }
   .auth-card input::placeholder{ color:var(--muted); }
-  .auth-card input:focus{ outline:none; border-color:var(--turf); background:rgba(0,0,0,0.28); }
+  .auth-card input:focus{ outline:none; border-color:var(--turf); background:rgba(0,0,0,0.28); box-shadow:0 0 0 3px rgba(94,177,107,0.16); }
+  :focus-visible{ outline:2px solid var(--turf); outline-offset:2px; border-radius:4px; }
   .auth-card button.primary{
     width:100%; background:var(--flood); color:#231600; border:none; font-weight:600; font-size:15px;
     padding:14px; border-radius:13px; cursor:pointer; margin-top:6px; box-shadow:0 4px 14px rgba(239,174,76,0.25);
@@ -120,11 +127,13 @@
   .swatch{ width:8px; height:8px; border-radius:50%; display:inline-block; }
 
   .list{ display:flex; flex-direction:column; gap:8px; min-height:60px; }
+  @keyframes itemIn{ from{ opacity:0; transform:translateY(5px); } to{ opacity:1; transform:none; } }
   .item{
     display:flex; align-items:center; gap:14px; padding:14px 16px; cursor:pointer;
     background:var(--bg-2); border:1px solid var(--line); border-radius:16px;
     box-shadow:var(--shadow-sm);
     transition:transform 0.15s var(--ease), box-shadow 0.15s var(--ease), background 0.15s var(--ease);
+    animation:itemIn 0.32s var(--ease) backwards;
   }
   .item:hover{ background:var(--bg-3); transform:translateY(-1px); box-shadow:var(--shadow-md); }
   .item:active{ transform:translateY(0) scale(0.99); }
@@ -168,6 +177,8 @@
   .modal-card button{ font-weight:600; font-size:13px; padding:11px 16px; border-radius:12px; border:1px solid var(--line); background:transparent; color:var(--chalk); cursor:pointer; }
   .modal-card button.primary{ background:var(--flood); color:#231600; border:none; }
   .modal-card button.primary:hover{ background:#f4bb63; }
+  .modal-card button.danger{ color:var(--danger); border-color:rgba(229,138,138,0.3); }
+  .modal-card button.danger:hover{ background:rgba(229,138,138,0.1); }
   .modal-label{ font-size:12px; color:var(--muted); margin-bottom:16px; letter-spacing:0.01em; }
   .modal-error{ display:none; font-size:12px; color:var(--danger); margin-bottom:8px; }
   .modal-note{ font-size:12px; color:var(--muted); margin:0 0 14px; padding:12px; background:rgba(0,0,0,0.18); border-radius:12px; line-height:1.5; }
@@ -187,6 +198,7 @@
 <!-- TELA DE LOGIN -->
 <div class="auth-wrap" id="auth-screen">
   <div class="auth-card">
+    <div class="auth-mark"><i class="ti ti-bulb-filled"></i></div>
     <h2 id="auth-title">Entrar</h2>
     <p class="sub" id="auth-sub">Acesse a agenda da sua quadra.</p>
     <p class="auth-error" id="auth-error"></p>
@@ -412,7 +424,7 @@ function renderSummary(){
 function renderList(){
   const list = document.getElementById('list');
   list.innerHTML = '';
-  hours.forEach(h=>{
+  hours.forEach((h, idx)=>{
     const entry = getSlot(currentDate, currentQuadra, h);
     let iconClass='icon-livre', tagClass='tag-livre', tagLabel='Livre', icon='ti-plus';
     let name='Horário livre', sub='R$'+price(h);
@@ -430,6 +442,7 @@ function renderList(){
 
     const row = document.createElement('div');
     row.className = 'item';
+    row.style.animationDelay = Math.min(idx * 16, 160) + 'ms';
     row.innerHTML = `
       <div class="time">${fmt(h)}</div>
       <div class="icon ${iconClass}"><i class="ti ${icon}"></i></div>
@@ -477,7 +490,7 @@ function openModal(h, entry){
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="primary" onclick="markPaid('${entry.ruleId}')">Marcar mês como pago</button>
         <button onclick="cancelOneDay(${h})">Liberar só esse dia</button>
-        <button onclick="removeMensalista('${entry.ruleId}')">Remover mensalista</button>
+        <button class="danger" onclick="removeMensalista('${entry.ruleId}')">Remover mensalista</button>
         <button onclick="closeModal()">Fechar</button>
       </div>`;
   } else if (entry.status === 'ocupado'){
@@ -497,7 +510,7 @@ function openModal(h, entry){
         <button class="primary" onclick="freeSlot('${entry.id}')">Desbloquear</button>
       </div>`;
   }
-  layer.innerHTML = `<div class="modal-bg"><div class="modal-card">${body}</div></div>`;
+  layer.innerHTML = `<div class="modal-bg" onclick="if(event.target===this) closeModal()"><div class="modal-card">${body}</div></div>`;
 }
 
 function toggleMensalistaField(){
