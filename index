@@ -291,20 +291,3 @@ function submitDemo(){
 
 </body>
 </html>
-
-# Onfut — site (index)
-
-Só o site por enquanto. Sem Firebase, sem agenda — é HTML puro, não depende de nada além de hospedagem.
-
-## 1. GitHub
-1. Crie um repositório novo (privado ou público, tanto faz por enquanto).
-2. Suba só o arquivo `index.html` pra raiz do repositório.
-
-## 2. Vercel
-1. Em https://vercel.com, clique em **Add New > Project**.
-2. Importe esse repositório.
-3. Não mexe em nenhuma configuração de build — é estático, o Vercel detecta sozinho.
-4. **Deploy**. Você recebe uma URL tipo `onfut.vercel.app` em menos de 1 minuto.
-
-## Depois
-Quando quiser, o botão "Ver agenda" do site já aponta pra `agenda.html` — quando você subir esse arquivo (e o `firebase-config.js`) no mesmo repositório, o link passa a funcionar sozinho, sem precisar mexer no site de novo.
